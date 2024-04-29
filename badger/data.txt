@@ -1,0 +1,6 @@
+|Atlantic Automation Design|101A03|Oren|Camber|From Florida|[50,20]img/atlad-logo.bmp|img/ocamber-photo.bmp|http://www.atlad.com|bio/ocamber-bio.txt
+|American Mensa|M100209280|Oren|Camber|From Florida|img/mensa-logo.bmp|img/ocamber-photo.bmp|https://www.us.mensa.org/|bio/ocamber-bio.txt
+|Atlantic Automation Design|105A02|Walter|White|From Arizona|img/atlad-logo.bmp|img/heisenberg.bmp|https://www.sonypictures.com/tv/breakingbad|bio/wwhite-bio.txt
+|Atlantic Automation Design|129B01|Bob|Badger|From Arizona|img/atlad-logo.bmp|img/badger-photo.bmp|https://en.wikipedia.org/wiki/American_badger|
+img/chase-img.bmp||[10,108]12345|[10,50]Oren|[10,80]Camber|||[175,0]img/ocamber-photo.bmp|http://www.chase.com|bio/ocamber-bio.txt
+
