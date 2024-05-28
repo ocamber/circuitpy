@@ -56,13 +56,6 @@ uart = busio.UART(board.TX, board.RX, baudrate=115200, timeout=0)
 
 random.seed(int(time.monotonic()*100000))
 
-def random_pixels(prob=1):
-    for i in range(6):
-        if random.random() < prob:
-            glow_pixel[i+1] = RAINBOW[int(random.random()*7)]
-        else:
-            glow_pixel[i+1] = BLACK
-
 # check for USB
 try:
     cc = ConsumerControl(usb_hid.devices)
@@ -102,6 +95,13 @@ class KeyEvent:
         self.pressed = key_pressed
         self.key_code = scancode
         self.key_number = None
+
+def random_pixels(prob=1):
+    for i in range(6):
+        if random.random() < prob:
+            glow_pixel[i+1] = RAINBOW[int(random.random()*7)]
+        else:
+            glow_pixel[i+1] = BLACK
 
 def shifted(k):
     if kb_layer==0 or not k:
@@ -150,19 +150,29 @@ while True:
         try:
             prev_caps = caps_on
             caps_on = usb.led_on(Keyboard.LED_CAPS_LOCK)
-            if (prev_caps and not caps_on) or (caps_on and not prev_caps):
+            if caps_on:
                 if CAPS_LED:
-                    glow_pixel[0] = YELLOW if caps_on else BLACK
-                else:
-                    uart.write(bytearray([CAPS_LED_ON if caps_on else CAPS_LED_OFF]))
+                    glow_pixel[0] = YELLOW
+                elif not prev_caps:
+                    uart.write(bytearray([CAPS_LED_ON]))
+            else:
+                if CAPS_LED:
+                    glow_pixel[0] = BLACK
+                elif prev_caps:
+                    uart.write(bytearray([CAPS_LED_OFF]))
 
             prev_scroll = scroll_on
             scroll_on = usb.led_on(Keyboard.LED_SCROLL_LOCK)
-            if (prev_scroll and not scroll_on) or (scroll_on and not prev_scroll):
+            if scroll_on:
                 if SCROLL_LED:
-                    glow_pixel[0] = CYAN if scroll_on else BLACK
-                else:
-                    uart.write(bytearray([SCROLL_LED_ON if scroll_on else SCROLL_LED_OFF]))
+                    glow_pixel[0] = CYAN
+                elif not prev_scroll:
+                    uart.write(bytearray([SCROLL_LED_ON]))
+            else:
+                if SCROLL_LED:
+                    glow_pixel[0] = BLACK
+                elif prev_scroll:
+                    uart.write(bytearray([SCROLL_LED_OFF]))
         except Exception as x:
             print('Caught this exception: ' + repr(x))
             glow_pixel[0] = RED
@@ -170,7 +180,6 @@ while True:
     tm = time.monotonic()
     if glow_mode>0 and tm > prev_tm + glow_interval:
         prev_tm = tm
-        hsdfgkhds
         if glow_mode==1:
             # red breathing
             v = glow_pixel[1][0] + glow_delta
@@ -236,6 +245,7 @@ while True:
                         glow_pixel[0] = YELLOW
                     else:
                         glow_pixel[0] = BLACK
+                    glow_pixel.show()
                     break
                 if b==KEY_PRESSED:
                     key_pressed = True
@@ -260,8 +270,9 @@ while True:
                 set_glow_mode(0)
             else:
                 set_glow_mode(glow_mode + 1)
-            uart.write(bytearray([GLOW_OFF+glow_mode]))
-        continue
+            if usb:
+                uart.write(bytearray([GLOW_OFF+glow_mode]))
+            continue
 
     if k_event.pressed:
         if delayed_k:
@@ -342,4 +353,3 @@ while True:
             k = shifted(k)
             if k:
                 usb.release(k)
-

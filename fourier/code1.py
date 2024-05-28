@@ -27,13 +27,14 @@ RAINBOW = (BLACK, RED, ORANGE, YELLOW, GREEN, BLUE, VIOLET)
 
 CAPS_LED = False
 SCROLL_LED = True
+caps_on = False
+scroll_on = False
 
 pixel = neopixel.NeoPixel(board.NEOPIXEL, 1, brightness=.5, auto_write=True)
 pixel[0] = CYAN
-glow_pixel = neopixel.NeoPixel(board.D2, 7, brightness=.7, auto_write=False)
+glow_pixel = neopixel.NeoPixel(board.D2, 7, brightness=.7, auto_write=True)
 glow_pixel.fill(BLACK)
 glow_pixel[0] = YELLOW
-glow_pixel.show()
 glow_mode = 0
 glow_delta = -1
 glow_interval = .2
@@ -55,39 +56,6 @@ uart = busio.UART(board.TX, board.RX, baudrate=115200, timeout=0)
 
 random.seed(int(time.monotonic()*100000))
 
-def random_pixels(prob=1):
-    glow_pixel.fill(BLACK)
-    for i in range(6):
-        if random.random() < prob:
-            glow_pixel[i+1] = RAINBOW[int(random.random()*7)]
-
-def glow_set():
-    prev_pixel = glow_pixel[0]
-    glow_interval = .2
-    if glow_mode==0:
-        glow_pixel.fill(BLACK)
-    elif glow_mode == 1:
-        # red breathing
-        glow_pixel.fill(DARK_RED)
-        glow_interval = .01
-        glow_delta = -1
-    elif glow_mode == 2:
-        # blue
-        glow_pixel.fill(BLUE)
-    elif glow_mode == 3:
-        # scrolling rainbow
-        for i in range(7):
-            glow_pixel[i] = RAINBOW[i]
-    elif glow_mode == 4:
-        # computer
-        random_pixels(.1)
-    elif glow_mode == 5:
-        # random colors
-        random_pixels()
-        glow_interval = .4
-    glow_pixel[0] = prev_pixel
-    glow_pixel.show()
-    
 # check for USB
 try:
     cc = ConsumerControl(usb_hid.devices)
@@ -128,64 +96,115 @@ class KeyEvent:
         self.key_code = scancode
         self.key_number = None
 
+def random_pixels(prob=1):
+    for i in range(6):
+        if random.random() < prob:
+            glow_pixel[i+1] = RAINBOW[int(random.random()*7)]
+        else:
+            glow_pixel[i+1] = BLACK
+
 def shifted(k):
     if kb_layer==0 or not k:
         return k
     return key_code[kb_layer][key_code[0].index(k)]
-    
+
 def tap(k):
     usb.press(k)
     time.sleep(.0001)
     usb.release(k)
 
-glow_set()
+def set_glow_mode(mode):
+    glow_mode = mode
+    if glow_mode > 5:
+        glow_mode = 1
+    glow_interval = .2
+    if glow_mode==0:
+        # Turn off LEDs for OFF or for COMPUTER modes
+        for i in range(6):
+            glow_pixel[i+1] = BLACK
+    elif glow_mode==1:
+        # Breathing mode
+        for i in range(6):
+            glow_pixel[i+1] = DARK_RED
+    elif glow_mode==2:
+        # Night Light mode
+        for i in range(6):
+            glow_pixel[i+1] = BLUE
+    elif glow_mode==3:
+        # Rainbow mode
+        for i in range(6):
+            glow_pixel[i+1] = RAINBOW[i]
+    elif glow_mode==4:
+        # Computer mode
+        random_pixels(.1)
+    elif glow_mode==5:
+        # Chaos mode
+        glow_interval = .4
+        random_pixels()
+
+glow_pixel[0] = BLACK
+
 prev_tm = time.monotonic()
 while True:
-    tm = time.monotonic()
-    if tm > prev_tm + glow_interval:
-        prev_tm = tm
-        if glow_mode>0 and glow_mode!=2:
-            if glow_mode==1:
-                # red breathing
-                v = glow_pixel[1][0] + glow_delta
-                if v<0:
-                    v = 0
-                    glow_delta = 1
-                elif v > 25:
-                    v = 25
-                    glow_delta = -1
-                    if usb:
-                        uart.write(bytearray([GLOW_OFF+glow_mode]))
-                glow_pixel.fill((v,0,0))
-            elif glow_mode==3:
-                # scrolling rainbow
-                v = glow_pixel[1]
-                for i in range(5):
-                    glow_pixel[i+1] = glow_pixel[i+2]
-                glow_pixel[6] = v
-            elif glow_mode==4:
-                # computer
-                random_pixels(.1)
-            elif glow_mode==5:
-                # random colors
-                random_pixels()
-        if usb:
-            caps_on = False
-            scroll_on = False
-            try:
-                caps_on = usb.led_on(Keyboard.LED_CAPS_LOCK)
-                scroll_on = usb.led_on(Keyboard.LED_SCROLL_LOCK)
-                if SCROLL_LED:
-                    glow_pixel[0] = CYAN if scroll_on else BLACK
-                else:
-                    uart.write(bytearray([SCROLL_LED_ON if scroll_on else SCROLL_LED_OFF]))
+    if usb:
+        try:
+            prev_caps = caps_on
+            caps_on = usb.led_on(Keyboard.LED_CAPS_LOCK)
+            if caps_on:
                 if CAPS_LED:
-                    glow_pixel[0] = YELLOW if caps_on else BLACK
-                else:
-                    uart.write(bytearray([CAPS_LED_ON if caps_on else CAPS_LED_OFF]))
-            except:
-                glow_pixel[0] = RED
-        glow_pixel.show()
+                    glow_pixel[0] = YELLOW
+                elif not prev_caps:
+                    uart.write(bytearray([CAPS_LED_ON]))
+            else:
+                if CAPS_LED:
+                    glow_pixel[0] = BLACK
+                elif prev_caps:
+                    uart.write(bytearray([CAPS_LED_OFF]))
+
+            prev_scroll = scroll_on
+            scroll_on = usb.led_on(Keyboard.LED_SCROLL_LOCK)
+            if scroll_on:
+                if SCROLL_LED:
+                    glow_pixel[0] = CYAN
+                elif not prev_scroll:
+                    uart.write(bytearray([SCROLL_LED_ON]))
+            else:
+                if SCROLL_LED:
+                    glow_pixel[0] = BLACK
+                elif prev_scroll:
+                    uart.write(bytearray([SCROLL_LED_OFF]))
+        except Exception as x:
+            print('Caught this exception: ' + repr(x))
+            glow_pixel[0] = RED
+
+    tm = time.monotonic()
+    if glow_mode>0 and tm > prev_tm + glow_interval:
+        prev_tm = tm
+        if glow_mode==1:
+            # red breathing
+            v = glow_pixel[1][0] + glow_delta
+            if v<0:
+                v = 0
+                glow_delta = 1
+            elif v > 25:
+                v = 25
+                glow_delta = -1
+                if usb:
+                    uart.write(bytearray([GLOW_OFF+glow_mode]))
+            for i in range(6):
+                glow_pixel[i+1] = (v,0,0)
+        elif glow_mode==3:
+            # scrolling rainbow
+            v = glow_pixel[1]
+            for i in range(5):
+                glow_pixel[i+1] = glow_pixel[i+2]
+            glow_pixel[6] = v
+        elif glow_mode==4:
+            # computer
+            random_pixels(.1)
+        elif glow_mode==5:
+            # random colors
+            random_pixels()
 
     k_event = key_matrix.events.get()
     if k_event:
@@ -206,7 +225,7 @@ while True:
                 print('Caught this exception: ' + repr(x))
                 pixel[0] = RED
             continue
-            
+
     if not k_event:
         try:
             key_pressed = True
@@ -217,8 +236,7 @@ while True:
                 pixel[0] = BLUE
                 b = data[0]
                 if b>=GLOW_OFF and b<=GLOW_OFF+5:
-                    glow_mode = b - GLOW_OFF
-                    glow_set()
+                    set_glow_mode(b - GLOW_OFF)
                     break
                 if b>=SCROLL_LED_OFF and b<=CAPS_LED_ON:
                     if b==SCROLL_LED_ON:
@@ -249,15 +267,13 @@ while True:
     if (delayed_k==kc.CONTROL or kb_layer==2) and k in (kc.ALT, kc.WINDOWS):
         if k_event.pressed:
             if k==kc.ALT:
-                glow_mode = 0
+                set_glow_mode(0)
             else:
-                glow_mode += 1
-                if glow_mode > 5:
-                    glow_mode = 1
-            uart.write(bytearray([GLOW_OFF+glow_mode]))
-            glow_set()
-        continue
-        
+                set_glow_mode(glow_mode + 1)
+            if usb:
+                uart.write(bytearray([GLOW_OFF+glow_mode]))
+            continue
+
     if k_event.pressed:
         if delayed_k:
             if delayed_k==kc.TAB:
