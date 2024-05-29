@@ -56,28 +56,32 @@ uart = busio.UART(board.TX, board.RX, baudrate=115200, timeout=0)
 random.seed(int(time.monotonic()*100000))
 
 def random_pixels(prob=1):
-    glow_pixel.fill(BLACK)
     for i in range(6):
         if random.random() < prob:
             glow_pixel[i+1] = RAINBOW[int(random.random()*7)]
+        else:
+            glow_pixel[i+1] = BLACK
 
 def glow_set():
     prev_pixel = glow_pixel[0]
     glow_interval = .2
     if glow_mode==0:
-        glow_pixel.fill(BLACK)
+        for i in range(6):
+            glow_pixel[i+1] = BLACK
     elif glow_mode == 1:
         # red breathing
-        glow_pixel.fill(DARK_RED)
+        for i in range(6):
+            glow_pixel[i+1] = DARK_RED
         glow_interval = .01
         glow_delta = -1
     elif glow_mode == 2:
         # blue
-        glow_pixel.fill(BLUE)
+        for i in range(6):
+            glow_pixel[i+1] = BLUE
     elif glow_mode == 3:
         # scrolling rainbow
-        for i in range(7):
-            glow_pixel[i] = RAINBOW[i]
+        for i in range(6):
+            glow_pixel[i+1] = RAINBOW[i]
     elif glow_mode == 4:
         # computer
         random_pixels(.1)
@@ -156,7 +160,8 @@ while True:
                     glow_delta = -1
                     if usb:
                         uart.write(bytearray([GLOW_OFF+glow_mode]))
-                glow_pixel.fill((v,0,0))
+                for i in range(6):
+                    glow_pixel[i+1] = (v,0,0)
             elif glow_mode==3:
                 # scrolling rainbow
                 v = glow_pixel[1]
