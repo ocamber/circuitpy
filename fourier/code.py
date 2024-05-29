@@ -122,8 +122,8 @@ key_code = [[
     kc.CONTROL,   kc.ALT, kc.WINDOWS,None,  kc.SPACE, None,       kc.SPACE, None,   None,kc.APPLICATION, kc.EQUALS,   kc.RIGHT_BRACKET, kc.ENTER
     ], [
     kc.ESCAPE,    kc.F1,  kc.F2,     kc.F3,  kc.F4,   kc.F5,      kc.F6,    kc.F7,  kc.F8,  kc.F9,       kc.F10,        kc.F11,     kc.F12,
-    kc.TAB,       None,   None,      None,   None,    kc.G,       kc.H,     kc.J,   kc.K,   kc.L,        kc.SEMICOLON,  None,       kc.PRINT_SCREEN,
-    kc.CAPS_LOCK, None,   None,      None,   None,    kc.B,    kc.PAGE_UP,  None,   kc.M,   kc.HOME,     kc.UP_ARROW,   kc.END,     kc.RIGHT_SHIFT,
+    kc.TAB,       None,   None,      None,   None,    None,       None,     None,   None,   None,        kc.SCROLL_LOCK,  None,       kc.PRINT_SCREEN,
+    kc.CAPS_LOCK, None,   None,      None, kc.INSERT,kc.PAUSE, kc.PAGE_UP,  None,   None,   kc.HOME,     kc.UP_ARROW,   kc.END,     kc.RIGHT_SHIFT,
     kc.CONTROL, GLOW_OFF, GLOW_ON,   None,  kc.SPACE, None,    kc.PAGE_DOWN,None,   None, kc.LEFT_ARROW, kc.DOWN_ARROW, kc.RIGHT_ARROW, kc.ENTER ]]
 
 class KeyEvent:
