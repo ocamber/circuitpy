@@ -32,7 +32,7 @@ pixel = neopixel.NeoPixel(board.NEOPIXEL, 1, brightness=.5, auto_write=True)
 pixel[0] = CYAN
 glow_pixel = neopixel.NeoPixel(board.D2, 7, brightness=.7, auto_write=False)
 glow_pixel.fill(BLACK)
-glow_pixel[0] = YELLOW
+glow_pixel[0] = VIOLET
 glow_pixel.show()
 glow_mode = 0
 glow_delta = -1
@@ -52,8 +52,6 @@ GLOW_ON = 244
 key_pressed = True
 caps_on = False
 scroll_on = False
-prev_caps_on = False
-prev_scroll_on = False
 
 uart = busio.UART(board.TX, board.RX, baudrate=115200, timeout=0)
 
@@ -67,7 +65,6 @@ def random_pixels(prob=1):
             glow_pixel[i+1] = BLACK
 
 def glow_set():
-    prev_pixel = glow_pixel[0]
     glow_interval = .2
     if glow_mode==0:
         for i in range(6):
@@ -93,7 +90,6 @@ def glow_set():
         # random colors
         random_pixels()
         glow_interval = .4
-    glow_pixel[0] = prev_pixel
     glow_pixel.show()
 
 # check for USB
@@ -147,7 +143,6 @@ def tap(k):
     usb.release(k)
 
 glow_pixel[0]=BLACK
-glow_pixel.show()
 glow_set()
 prev_tm = time.monotonic()
 while True:
@@ -181,28 +176,20 @@ while True:
                 # random colors
                 random_pixels()
         if usb:
-            prev_caps_on = caps_on
-            prev_scroll_on = scroll_on
             try:
                 caps_on = usb.led_on(Keyboard.LED_CAPS_LOCK)
-                if (caps_on and not prev_caps_on) or (prev_caps_on and not caps_on):
-                    if CAPS_LED:
-                        glow_pixel[0] = YELLOW if caps_on else BLACK
-                    else:
-                        uart.write(bytearray([CAPS_LED_ON if caps_on else CAPS_LED_OFF]))
-                    prev_caps_on = caps_on
+                if CAPS_LED:
+                    glow_pixel[0] = YELLOW if caps_on else BLACK
+                else:
+                    uart.write(bytearray([CAPS_LED_ON if caps_on else CAPS_LED_OFF]))
                 scroll_on = usb.led_on(Keyboard.LED_SCROLL_LOCK)
-                if (scroll_on and not prev_scroll_on) or (prev_scroll_on and not scroll_on):
-                    if SCROLL_LED:
-                        glow_pixel[0] = CYAN if scroll_on else BLACK
-                    else:
-                        uart.write(bytearray([SCROLL_LED_ON if scroll_on else SCROLL_LED_OFF]))
-                    prev_scroll_on = scroll_on
+                if SCROLL_LED:
+                    glow_pixel[0] = CYAN if scroll_on else BLACK
+                else:
+                    uart.write(bytearray([SCROLL_LED_ON if scroll_on else SCROLL_LED_OFF]))
             except Exception as x:
                 print('Caught this exception: ' + repr(x))
-                glow_pixel[0] = RED
-                caps_on = prev_caps_on
-                scroll_on = prev_scroll_on
+                pixel[0] = RED
         glow_pixel.show()
 
     k_event = key_matrix.events.get()
