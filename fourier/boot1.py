@@ -1,4 +1,4 @@
 import storage
-storage.remount("/")
+storage.remount("/", readonly=False)
 m = storage.getmount("/")
 m.label = "FOURIER_RT"
