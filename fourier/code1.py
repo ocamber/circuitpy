@@ -146,6 +146,8 @@ def tap(k):
     time.sleep(.0001)
     usb.release(k)
 
+glow_pixel[0]=BLACK
+glow_pixel.show()
 glow_set()
 prev_tm = time.monotonic()
 while True:
