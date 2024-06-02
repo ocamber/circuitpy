@@ -160,7 +160,10 @@ while True:
                     v = 25
                     glow_delta = -1
                     if usb:
-                        uart.write(bytearray([GLOW_OFF+glow_mode]))
+                        try:
+                            uart.write(bytearray([GLOW_OFF+glow_mode]))
+                        except Exception as x:
+                            print('UART LED BREATHE sync ' + repr(x))
                 for i in range(6):
                     glow_pixel[i+1] = (v,0,0)
             elif glow_mode==3:
@@ -178,18 +181,23 @@ while True:
         if usb:
             try:
                 caps_on = usb.led_on(Keyboard.LED_CAPS_LOCK)
+                scroll_on = usb.led_on(Keyboard.LED_SCROLL_LOCK)
                 if CAPS_LED:
                     glow_pixel[0] = YELLOW if caps_on else BLACK
                 else:
-                    uart.write(bytearray([CAPS_LED_ON if caps_on else CAPS_LED_OFF]))
-                scroll_on = usb.led_on(Keyboard.LED_SCROLL_LOCK)
+                    try:
+                        uart.write(bytearray([CAPS_LED_ON if caps_on else CAPS_LED_OFF]))
+                    except Exception as x:
+                        print('UART CAPS: ' + repr(x))
                 if SCROLL_LED:
                     glow_pixel[0] = CYAN if scroll_on else BLACK
                 else:
-                    uart.write(bytearray([SCROLL_LED_ON if scroll_on else SCROLL_LED_OFF]))
-            except Exception as x:
-                print('Caught this exception: ' + repr(x))
-                pixel[0] = RED
+                    try:
+                        uart.write(bytearray([SCROLL_LED_ON if scroll_on else SCROLL_LED_OFF]))
+                    except Exception as x:
+                        print('UART SCROLL: ' + repr(x))
+            except:
+                pass
         glow_pixel.show()
 
     k_event = key_matrix.events.get()
@@ -206,10 +214,8 @@ while True:
                 if not k_event.pressed:
                     b[0] = KEY_RELEASED
                 uart.write(bytearray(b))
-                pixel[0] = BLUE
             except Exception as x:
-                print('Caught this exception: ' + repr(x))
-                pixel[0] = RED
+                print('UART Send KB: ' + repr(x))
             continue
             
     if not k_event:
@@ -244,8 +250,7 @@ while True:
                 k = k_event.key_code
                 break
         except Exception as x:
-            print('Caught this exception: ' + repr(x))
-            pixel[0] = RED
+            print('UART Read KB: ' + repr(x))
             continue
 
     if not k_event:
@@ -259,7 +264,10 @@ while True:
                 glow_mode += 1
                 if glow_mode > 5:
                     glow_mode = 1
-            uart.write(bytearray([GLOW_OFF+glow_mode]))
+            try:
+                uart.write(bytearray([GLOW_OFF+glow_mode]))
+            except Exception as x:
+                print('UART Send Glow Mode: ' + repr(x))
             glow_set()
         continue
 
