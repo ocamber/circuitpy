@@ -12,6 +12,7 @@ from adafruit_hid.keycode import Keycode
 import random
 import neopixel
 
+LOG_FILENAME = 'code_log.txt'
 DARK_RED = (25,0,0)
 RED = (50, 0, 0)
 ORANGE = (40, 15, 0)
@@ -57,6 +58,25 @@ uart = busio.UART(board.TX, board.RX, baudrate=115200, timeout=0)
 
 random.seed(int(time.monotonic()*100000))
 
+LOG_FILE = False
+def LogEvent(message="Event", pixel_color=VIOLET, write_to_file=False):
+    glow_pixel[0] = pixel_color
+    ns = time.monotonic_ns()
+    msg = str(ns/1000000) + ': ' + message
+    print(msg)    
+    if write_to_file:
+        try:
+            LOG_FILE = open(LOG_FILENAME, 'a')
+            LOG_FILE.write('\n')
+        except:
+            LOG_FILENAME = ''
+        if LOG_FILENAME:
+            LOG_FILE.write(msg+'\n')
+            LOG_FILE.flush()
+
+def LogException(x, message='Exception'):
+    LogEvent(message+':'+repr(x), RED, True)
+    
 def random_pixels(prob=1):
     for i in range(6):
         if random.random() < prob:
@@ -96,9 +116,9 @@ def glow_set():
 try:
     cc = ConsumerControl(usb_hid.devices)
     usb = Keyboard(usb_hid.devices)
-    pixel[0] = VIOLET
+    LogEvent('USB',VIOLET)
 except:
-    pixel[0] = ORANGE
+    LogEvent('NO USB', ORANGE)
 
 key_matrix = keypad.KeyMatrix(
     row_pins=(board.A3, board.D6, board.D7, board.D8),
@@ -142,7 +162,7 @@ def tap(k):
     time.sleep(.0001)
     usb.release(k)
 
-glow_pixel[0]=BLACK
+LogEvent('INIT', BLACK, True)
 glow_set()
 prev_tm = time.monotonic()
 while True:
@@ -163,7 +183,7 @@ while True:
                         try:
                             uart.write(bytearray([GLOW_OFF+glow_mode]))
                         except Exception as x:
-                            print('UART LED BREATHE sync ' + repr(x))
+                            LogException(x, 'UART LED BREATHE sync')
                 for i in range(6):
                     glow_pixel[i+1] = (v,0,0)
             elif glow_mode==3:
@@ -188,14 +208,14 @@ while True:
                     try:
                         uart.write(bytearray([CAPS_LED_ON if caps_on else CAPS_LED_OFF]))
                     except Exception as x:
-                        print('UART CAPS: ' + repr(x))
+                        LogException(x, 'UART CAPS')
                 if SCROLL_LED:
                     glow_pixel[0] = CYAN if scroll_on else BLACK
                 else:
                     try:
                         uart.write(bytearray([SCROLL_LED_ON if scroll_on else SCROLL_LED_OFF]))
                     except Exception as x:
-                        print('UART SCROLL: ' + repr(x))
+                        LogException(x, 'UART SCROLL')
             except:
                 pass
         glow_pixel.show()
@@ -215,7 +235,7 @@ while True:
                     b[0] = KEY_RELEASED
                 uart.write(bytearray(b))
             except Exception as x:
-                print('UART Send KB: ' + repr(x))
+                LogException(x, 'UART Send KB')
             continue
             
     if not k_event:
@@ -250,7 +270,7 @@ while True:
                 k = k_event.key_code
                 break
         except Exception as x:
-            print('UART Read KB: ' + repr(x))
+            LogException(x, 'UART Read KB')
             continue
 
     if not k_event:
@@ -267,7 +287,7 @@ while True:
             try:
                 uart.write(bytearray([GLOW_OFF+glow_mode]))
             except Exception as x:
-                print('UART Send Glow Mode: ' + repr(x))
+                LogException(x, 'UART Send Glow Mode')
             glow_set()
         continue
 
