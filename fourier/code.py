@@ -33,7 +33,7 @@ pixel = neopixel.NeoPixel(board.NEOPIXEL, 1, brightness=.5, auto_write=True)
 pixel[0] = CYAN
 glow_pixel = neopixel.NeoPixel(board.D2, 7, brightness=.7, auto_write=False)
 glow_pixel.fill(BLACK)
-glow_pixel[0] = VIOLET
+glow_pixel[0] = GREEN
 glow_pixel.show()
 glow_mode = 0
 glow_delta = -1
@@ -61,6 +61,7 @@ random.seed(int(time.monotonic()*100000))
 LOG_FILE = False
 def LogEvent(message="Event", pixel_color=VIOLET, write_to_file=False):
     glow_pixel[0] = pixel_color
+    glow_pixel.show()
     ns = time.monotonic_ns()
     msg = str(ns/1000000) + ': ' + message
     print(msg)    
