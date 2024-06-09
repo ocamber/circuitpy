@@ -12,7 +12,6 @@ from adafruit_hid.keycode import Keycode
 import random
 import neopixel
 
-LOG_FILENAME = 'code_log.txt'
 DARK_RED = (25,0,0)
 RED = (50, 0, 0)
 ORANGE = (40, 15, 0)
@@ -33,7 +32,7 @@ pixel = neopixel.NeoPixel(board.NEOPIXEL, 1, brightness=.5, auto_write=True)
 pixel[0] = CYAN
 glow_pixel = neopixel.NeoPixel(board.D2, 7, brightness=.7, auto_write=False)
 glow_pixel.fill(BLACK)
-glow_pixel[0] = GREEN
+glow_pixel[0] = RED
 glow_pixel.show()
 glow_mode = 0
 glow_delta = -1
@@ -55,28 +54,20 @@ caps_on = False
 scroll_on = False
 
 uart = busio.UART(board.TX, board.RX, baudrate=115200, timeout=0)
+glow_pixel[0] = GREEN
+glow_pixel.show()
 
 random.seed(int(time.monotonic()*100000))
 
-LOG_FILE = False
-def LogEvent(message="Event", pixel_color=VIOLET, write_to_file=False):
+def LogEvent(message="Event", pixel_color=VIOLET):
     glow_pixel[0] = pixel_color
     glow_pixel.show()
     ns = time.monotonic_ns()
     msg = str(ns/1000000) + ': ' + message
-    print(msg)    
-    if write_to_file:
-        try:
-            LOG_FILE = open(LOG_FILENAME, 'a')
-            LOG_FILE.write('\n')
-        except:
-            LOG_FILENAME = ''
-        if LOG_FILENAME:
-            LOG_FILE.write(msg+'\n')
-            LOG_FILE.flush()
+    print(msg)
 
-def LogException(x, message='Exception'):
-    LogEvent(message+':'+repr(x), RED, True)
+def LogException(x):
+    LogEvent(repr(x), RED)
     
 def random_pixels(prob=1):
     for i in range(6):
@@ -163,7 +154,7 @@ def tap(k):
     time.sleep(.0001)
     usb.release(k)
 
-LogEvent('INIT', BLACK, True)
+LogEvent('INIT', BLACK)
 glow_set()
 prev_tm = time.monotonic()
 while True:
