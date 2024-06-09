@@ -5,10 +5,12 @@ import keypad
 import busio
 import digitalio
 import usb_hid
+from adafruit_hid.consumer_control import ConsumerControl
+from adafruit_hid.consumer_control_code import ConsumerControlCode
 from adafruit_hid.keyboard import Keyboard
 from adafruit_hid.keycode import Keycode
-import random
 import neopixel
+import random
 
 DARK_RED = (25,0,0)
 RED = (50, 0, 0)
@@ -29,8 +31,7 @@ SCROLL_LED = False
 pixel = neopixel.NeoPixel(board.NEOPIXEL, 1, brightness=.5, auto_write=True)
 pixel[0] = CYAN
 glow_pixel = neopixel.NeoPixel(board.D2, 7, brightness=.7, auto_write=False)
-glow_pixel.fill(BLACK)
-glow_pixel[0] = RED
+glow_pixel.fill(GREEN)
 glow_pixel.show()
 glow_mode = 0
 glow_delta = -1
@@ -47,21 +48,18 @@ KEY_RELEASED = 242
 GLOW_OFF = 243
 GLOW_ON = 244
 key_pressed = True
-caps_on = False
-scroll_on = False
 
 uart = busio.UART(board.TX, board.RX, baudrate=115200, timeout=0)
-glow_pixel[0] = BLUE
+glow_pixel[1] = BLUE
 glow_pixel.show()
 
 random.seed(int(time.monotonic()*100000))
 
 def random_pixels(prob=1):
+    glow_pixel.fill(BLACK)
     for i in range(6):
         if random.random() < prob:
             glow_pixel[i+1] = RAINBOW[int(random.random()*7)]
-        else:
-            glow_pixel[i+1] = BLACK
 
 def glow_set():
     glow_interval = .2
@@ -90,19 +88,19 @@ def glow_set():
         random_pixels()
         glow_interval = .4
     glow_pixel.show()
-
-glow_pixel.fill(GREEN)
-glow_pixel.show()
-
+    
 # check for USB
 try:
-    usb = Keyboard(usb_hid.devices)
-    glow_pixel.fill(VIOLET)
-    glow_pixel.show()
+    cc = ConsumerControl(usb_hid.devices)
+    if usb_hid.devices[0].get_last_received_report().len() > 0:
+        usb = Keyboard(usb_hid.devices)
+        pixel[0] = YELLOW
 except:
-    glow_pixel.fill(ORANGE)
-    glow_pixel.show()
-
+    pass
+if not usb:
+    pixel[0] = BLUE
+glow_pixel[2] = BLUE
+glow_pixel.show()
 
 key_matrix = keypad.KeyMatrix(
     row_pins=(board.A3, board.D6, board.D7, board.D8),
@@ -126,8 +124,8 @@ key_code = [[
     kc.CONTROL,   kc.ALT, kc.WINDOWS,None,  kc.SPACE, None,       kc.SPACE, None,   None,kc.APPLICATION, kc.EQUALS,   kc.RIGHT_BRACKET, kc.ENTER
     ], [
     kc.ESCAPE,    kc.F1,  kc.F2,     kc.F3,  kc.F4,   kc.F5,      kc.F6,    kc.F7,  kc.F8,  kc.F9,       kc.F10,        kc.F11,     kc.F12,
-    kc.TAB,       None,   None,      None,   None,    None,       None,     None,   None,   None,        kc.SCROLL_LOCK,  None,       kc.PRINT_SCREEN,
-    kc.CAPS_LOCK, None,   None,      None, kc.INSERT,kc.PAUSE, kc.PAGE_UP,  None,   None,   kc.HOME,     kc.UP_ARROW,   kc.END,     kc.RIGHT_SHIFT,
+    kc.TAB,       None,   None,      None,   None,    kc.G,       kc.H,     kc.J,   kc.K,   kc.L,        kc.SEMICOLON,  None,       kc.PRINT_SCREEN,
+    kc.CAPS_LOCK, None,   None,      None,   None,    kc.B,    kc.PAGE_UP,  None,   kc.M,   kc.HOME,     kc.UP_ARROW,   kc.END,     kc.RIGHT_SHIFT,
     kc.CONTROL, GLOW_OFF, GLOW_ON,   None,  kc.SPACE, None,    kc.PAGE_DOWN,None,   None, kc.LEFT_ARROW, kc.DOWN_ARROW, kc.RIGHT_ARROW, kc.ENTER ]]
 
 class KeyEvent:
@@ -146,7 +144,7 @@ def tap(k):
     time.sleep(.0001)
     usb.release(k)
 
-glow_pixel.fill(BLACK)
+glow_pixel.fill(VIOLET)
 glow_set()
 prev_tm = time.monotonic()
 while True:
@@ -164,13 +162,8 @@ while True:
                     v = 25
                     glow_delta = -1
                     if usb:
-                        try:
-                            uart.write(bytearray([GLOW_OFF+glow_mode]))
-                        except Exception as x:
-                            glow_pixel[0]=RED
-                            glow_pixel.show()
-                for i in range(6):
-                    glow_pixel[i+1] = (v,0,0)
+                        uart.write(bytearray([GLOW_OFF+glow_mode]))
+                glow_pixel.fill((v,0,0))
             elif glow_mode==3:
                 # scrolling rainbow
                 v = glow_pixel[1]
@@ -184,29 +177,21 @@ while True:
                 # random colors
                 random_pixels()
         if usb:
+            caps_on = False
+            scroll_on = False
             try:
                 caps_on = usb.led_on(Keyboard.LED_CAPS_LOCK)
                 scroll_on = usb.led_on(Keyboard.LED_SCROLL_LOCK)
-                if CAPS_LED:
-                    glow_pixel[0] = YELLOW if caps_on else BLACK
-                else:
-                    try:
-                        uart.write(bytearray([CAPS_LED_ON if caps_on else CAPS_LED_OFF]))
-                    except Exception as x:
-                        glow_pixel[0]=RED
-                        glow_pixel[1]=YELLOW
-                        glow_pixel.show()
                 if SCROLL_LED:
                     glow_pixel[0] = CYAN if scroll_on else BLACK
                 else:
-                    try:
-                        uart.write(bytearray([SCROLL_LED_ON if scroll_on else SCROLL_LED_OFF]))
-                    except Exception as x:
-                        glow_pixel[0]=RED
-                        glow_pixel[1]=CYAN
-                        glow_pixel.show()
+                    uart.write(bytearray([SCROLL_LED_ON if scroll_on else SCROLL_LED_OFF]))
+                if CAPS_LED:
+                    glow_pixel[0] = YELLOW if caps_on else BLACK
+                else:
+                    uart.write(bytearray([CAPS_LED_ON if caps_on else CAPS_LED_OFF]))
             except:
-                pass
+                glow_pixel[0] = RED
         glow_pixel.show()
 
     k_event = key_matrix.events.get()
@@ -223,10 +208,10 @@ while True:
                 if not k_event.pressed:
                     b[0] = KEY_RELEASED
                 uart.write(bytearray(b))
+                pixel[0] = BLUE
             except Exception as x:
-                glow_pixel[0]=RED
-                glow_pixel[1]=BLUE
-                glow_pixel.show()
+                print('Caught this exception: ' + repr(x))
+                pixel[0] = RED
             continue
             
     if not k_event:
@@ -261,9 +246,8 @@ while True:
                 k = k_event.key_code
                 break
         except Exception as x:
-            glow_pixel[0]=RED
-            glow_pixel[1]=ORANGE
-            glow_pixel.show()
+            print('Caught this exception: ' + repr(x))
+            pixel[0] = RED
             continue
 
     if not k_event:
@@ -277,12 +261,7 @@ while True:
                 glow_mode += 1
                 if glow_mode > 5:
                     glow_mode = 1
-            try:
-                uart.write(bytearray([GLOW_OFF+glow_mode]))
-            except Exception as x:
-                glow_pixel[0]=RED
-                glow_pixel[1]=VIOLET
-                glow_pixel.show()
+            uart.write(bytearray([GLOW_OFF+glow_mode]))
             glow_set()
         continue
 
