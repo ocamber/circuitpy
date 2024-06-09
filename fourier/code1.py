@@ -5,8 +5,6 @@ import keypad
 import busio
 import digitalio
 import usb_hid
-from adafruit_hid.consumer_control import ConsumerControl
-from adafruit_hid.consumer_control_code import ConsumerControlCode
 from adafruit_hid.keyboard import Keyboard
 from adafruit_hid.keycode import Keycode
 import random
@@ -37,7 +35,6 @@ glow_pixel.show()
 glow_mode = 0
 glow_delta = -1
 glow_interval = .2
-cc = None
 usb = None
 kb_layer = 0
 delayed_k = None
@@ -54,21 +51,11 @@ caps_on = False
 scroll_on = False
 
 uart = busio.UART(board.TX, board.RX, baudrate=115200, timeout=0)
-glow_pixel[0] = GREEN
+glow_pixel[0] = BLUE
 glow_pixel.show()
 
 random.seed(int(time.monotonic()*100000))
 
-def LogEvent(message="Event", pixel_color=VIOLET):
-    glow_pixel[0] = pixel_color
-    glow_pixel.show()
-    ns = time.monotonic_ns()
-    msg = str(ns/1000000) + ': ' + message
-    print(msg)
-
-def LogException(x):
-    LogEvent(repr(x), RED)
-    
 def random_pixels(prob=1):
     for i in range(6):
         if random.random() < prob:
@@ -104,13 +91,17 @@ def glow_set():
         glow_interval = .4
     glow_pixel.show()
 
+glow_pixel.fill(GREEN)
+glow_pixel.show()
+
 # check for USB
 try:
-    cc = ConsumerControl(usb_hid.devices)
     usb = Keyboard(usb_hid.devices)
-    LogEvent('USB',VIOLET)
+    glow_pixel.fill(VIOLET)
+    glow_pixel.show()
 except:
-    LogEvent('NO USB', ORANGE)
+    glow_pixel.fill(ORANGE)
+    glow_pixel.show()
 
 key_matrix = keypad.KeyMatrix(
     row_pins=(board.A3, board.D6, board.D7, board.D8),
@@ -154,7 +145,7 @@ def tap(k):
     time.sleep(.0001)
     usb.release(k)
 
-LogEvent('INIT', BLACK)
+glow_pixel.fill(BLACK)
 glow_set()
 prev_tm = time.monotonic()
 while True:
@@ -175,7 +166,8 @@ while True:
                         try:
                             uart.write(bytearray([GLOW_OFF+glow_mode]))
                         except Exception as x:
-                            LogException(x, 'UART LED BREATHE sync')
+                            glow_pixel[0]=RED
+                            glow_pixel.show()
                 for i in range(6):
                     glow_pixel[i+1] = (v,0,0)
             elif glow_mode==3:
@@ -200,14 +192,18 @@ while True:
                     try:
                         uart.write(bytearray([CAPS_LED_ON if caps_on else CAPS_LED_OFF]))
                     except Exception as x:
-                        LogException(x, 'UART CAPS')
+                        glow_pixel[0]=RED
+                        glow_pixel[1]=YELLOW
+                        glow_pixel.show()
                 if SCROLL_LED:
                     glow_pixel[0] = CYAN if scroll_on else BLACK
                 else:
                     try:
                         uart.write(bytearray([SCROLL_LED_ON if scroll_on else SCROLL_LED_OFF]))
                     except Exception as x:
-                        LogException(x, 'UART SCROLL')
+                        glow_pixel[0]=RED
+                        glow_pixel[1]=CYAN
+                        glow_pixel.show()
             except:
                 pass
         glow_pixel.show()
@@ -227,7 +223,9 @@ while True:
                     b[0] = KEY_RELEASED
                 uart.write(bytearray(b))
             except Exception as x:
-                LogException(x, 'UART Send KB')
+                glow_pixel[0]=RED
+                glow_pixel[1]=BLUE
+                glow_pixel.show()
             continue
             
     if not k_event:
@@ -262,7 +260,9 @@ while True:
                 k = k_event.key_code
                 break
         except Exception as x:
-            LogException(x, 'UART Read KB')
+            glow_pixel[0]=RED
+            glow_pixel[1]=ORANGE
+            glow_pixel.show()
             continue
 
     if not k_event:
@@ -279,7 +279,9 @@ while True:
             try:
                 uart.write(bytearray([GLOW_OFF+glow_mode]))
             except Exception as x:
-                LogException(x, 'UART Send Glow Mode')
+                glow_pixel[0]=RED
+                glow_pixel[1]=VIOLET
+                glow_pixel.show()
             glow_set()
         continue
 
