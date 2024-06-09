@@ -54,6 +54,8 @@ glow_pixel[1] = BLUE
 glow_pixel.show()
 
 random.seed(int(time.monotonic()*100000))
+glow_pixel[2] = BLUE
+glow_pixel.show()
 
 def random_pixels(prob=1):
     glow_pixel.fill(BLACK)
@@ -89,17 +91,20 @@ def glow_set():
         glow_interval = .4
     glow_pixel.show()
     
+glow_pixel[3] = BLUE
+glow_pixel.show()
 # check for USB
 try:
     cc = ConsumerControl(usb_hid.devices)
-    if usb_hid.devices[0].get_last_received_report().len() > 0:
+    glow_pixel[4] = BLUE
+    glow_pixel.show()
+    if usb_hid.devices[0]:
         usb = Keyboard(usb_hid.devices)
-        pixel[0] = YELLOW
+        glow_pixel[0] = ORANGE
 except:
     pass
 if not usb:
-    pixel[0] = BLUE
-glow_pixel[2] = BLUE
+    glow_pixel[0] = BLUE
 glow_pixel.show()
 
 key_matrix = keypad.KeyMatrix(
@@ -138,13 +143,13 @@ def shifted(k):
     if kb_layer==0 or not k:
         return k
     return key_code[kb_layer][key_code[0].index(k)]
-    
+
 def tap(k):
     usb.press(k)
     time.sleep(.0001)
     usb.release(k)
 
-glow_pixel.fill(VIOLET)
+glow_pixel.fill(BLACK)
 glow_set()
 prev_tm = time.monotonic()
 while True:
@@ -264,7 +269,7 @@ while True:
             uart.write(bytearray([GLOW_OFF+glow_mode]))
             glow_set()
         continue
-        
+
     if k_event.pressed:
         if delayed_k:
             if delayed_k==kc.TAB:
