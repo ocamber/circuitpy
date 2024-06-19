@@ -94,8 +94,13 @@ def glow_set():
     glow_pixel.show()
 
 # check for USB
+<<<<<<< HEAD
 if USB:
     try:
+=======
+try:
+    if usb_hid.devices.len() > 0:
+>>>>>>> b0a213257a0ff1add9213f706e10ded458009d51
         cc = ConsumerControl(usb_hid.devices)
         usb = Keyboard(usb_hid.devices)
         pixel[0] = YELLOW
