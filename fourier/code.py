@@ -9,8 +9,8 @@ from adafruit_hid.consumer_control import ConsumerControl
 from adafruit_hid.consumer_control_code import ConsumerControlCode
 from adafruit_hid.keyboard import Keyboard
 from adafruit_hid.keycode import Keycode
-import neopixel
 import random
+import neopixel
 
 DARK_RED = (25,0,0)
 RED = (50, 0, 0)
@@ -27,15 +27,18 @@ RAINBOW = (BLACK, RED, ORANGE, YELLOW, GREEN, BLUE, VIOLET)
 
 CAPS_LED = True
 SCROLL_LED = False
+USB = True
 
 pixel = neopixel.NeoPixel(board.NEOPIXEL, 1, brightness=.5, auto_write=True)
 pixel[0] = CYAN
 glow_pixel = neopixel.NeoPixel(board.D2, 7, brightness=.7, auto_write=False)
-glow_pixel.fill(GREEN)
+glow_pixel.fill(BLACK)
+glow_pixel[0] = YELLOW
 glow_pixel.show()
 glow_mode = 0
 glow_delta = -1
 glow_interval = .2
+cc = None
 usb = None
 kb_layer = 0
 delayed_k = None
@@ -50,20 +53,18 @@ GLOW_ON = 244
 key_pressed = True
 
 uart = busio.UART(board.TX, board.RX, baudrate=115200, timeout=0)
-glow_pixel[1] = BLUE
-glow_pixel.show()
 
 random.seed(int(time.monotonic()*100000))
-glow_pixel[2] = BLUE
-glow_pixel.show()
 
 def random_pixels(prob=1):
-    glow_pixel.fill(BLACK)
     for i in range(6):
         if random.random() < prob:
             glow_pixel[i+1] = RAINBOW[int(random.random()*7)]
+        else:
+            glow_pixel[i+1] = BLACK
 
 def glow_set():
+    prev_pixel = glow_pixel[0]
     glow_interval = .2
     if glow_mode==0:
         for i in range(6):
@@ -89,23 +90,17 @@ def glow_set():
         # random colors
         random_pixels()
         glow_interval = .4
+    glow_pixel[0] = prev_pixel
     glow_pixel.show()
-    
-glow_pixel[3] = BLUE
-glow_pixel.show()
+
 # check for USB
-try:
-    cc = ConsumerControl(usb_hid.devices)
-    glow_pixel[4] = BLUE
-    glow_pixel.show()
-    if usb_hid.devices[0]:
+if USB:
+    try:
+        cc = ConsumerControl(usb_hid.devices)
         usb = Keyboard(usb_hid.devices)
-        glow_pixel[0] = ORANGE
-except:
-    pass
-if not usb:
-    glow_pixel[0] = BLUE
-glow_pixel.show()
+        pixel[0] = YELLOW
+    except:
+        pixel[0] = BLUE
 
 key_matrix = keypad.KeyMatrix(
     row_pins=(board.A3, board.D6, board.D7, board.D8),
@@ -129,8 +124,8 @@ key_code = [[
     kc.CONTROL,   kc.ALT, kc.WINDOWS,None,  kc.SPACE, None,       kc.SPACE, None,   None,kc.APPLICATION, kc.EQUALS,   kc.RIGHT_BRACKET, kc.ENTER
     ], [
     kc.ESCAPE,    kc.F1,  kc.F2,     kc.F3,  kc.F4,   kc.F5,      kc.F6,    kc.F7,  kc.F8,  kc.F9,       kc.F10,        kc.F11,     kc.F12,
-    kc.TAB,       None,   None,      None,   None,    kc.G,       kc.H,     kc.J,   kc.K,   kc.L,        kc.SEMICOLON,  None,       kc.PRINT_SCREEN,
-    kc.CAPS_LOCK, None,   None,      None,   None,    kc.B,    kc.PAGE_UP,  None,   kc.M,   kc.HOME,     kc.UP_ARROW,   kc.END,     kc.RIGHT_SHIFT,
+    kc.TAB,       None,   None,      None,   None,    None,       None,     None,   None,   None,        kc.SCROLL_LOCK,  None,       kc.PRINT_SCREEN,
+    kc.CAPS_LOCK, None,   None,      None, kc.INSERT,kc.PAUSE, kc.PAGE_UP,  None,   None,   kc.HOME,     kc.UP_ARROW,   kc.END,     kc.RIGHT_SHIFT,
     kc.CONTROL, GLOW_OFF, GLOW_ON,   None,  kc.SPACE, None,    kc.PAGE_DOWN,None,   None, kc.LEFT_ARROW, kc.DOWN_ARROW, kc.RIGHT_ARROW, kc.ENTER ]]
 
 class KeyEvent:
@@ -149,7 +144,6 @@ def tap(k):
     time.sleep(.0001)
     usb.release(k)
 
-glow_pixel.fill(BLACK)
 glow_set()
 prev_tm = time.monotonic()
 while True:
@@ -168,7 +162,8 @@ while True:
                     glow_delta = -1
                     if usb:
                         uart.write(bytearray([GLOW_OFF+glow_mode]))
-                glow_pixel.fill((v,0,0))
+                for i in range(6):
+                    glow_pixel[i+1] = (v,0,0)
             elif glow_mode==3:
                 # scrolling rainbow
                 v = glow_pixel[1]
