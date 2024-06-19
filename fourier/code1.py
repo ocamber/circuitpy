@@ -15,7 +15,7 @@ import neopixel
 DARK_RED = (25,0,0)
 RED = (50, 0, 0)
 ORANGE = (40, 15, 0)
-YELLOW = (25, 20, 00)
+YELLOW = (25, 20, 0)
 GREEN = (0, 50, 0)
 CYAN = (0, 25, 25)
 BLUE = (0, 0, 50)
@@ -64,7 +64,6 @@ def random_pixels(prob=1):
             glow_pixel[i+1] = BLACK
 
 def glow_set():
-    prev_pixel = glow_pixel[0]
     glow_interval = .2
     if glow_mode==0:
         for i in range(6):
@@ -90,17 +89,11 @@ def glow_set():
         # random colors
         random_pixels()
         glow_interval = .4
-    glow_pixel[0] = prev_pixel
     glow_pixel.show()
 
 # check for USB
-<<<<<<< HEAD
 if USB:
     try:
-=======
-try:
-    if usb_hid.devices.len() > 0:
->>>>>>> b0a213257a0ff1add9213f706e10ded458009d51
         cc = ConsumerControl(usb_hid.devices)
         usb = Keyboard(usb_hid.devices)
         pixel[0] = YELLOW
