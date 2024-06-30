@@ -51,6 +51,8 @@ KEY_RELEASED = 242
 GLOW_OFF = 243
 GLOW_ON = 244
 key_pressed = True
+caps_on = False
+scroll_on = False
 
 uart = busio.UART(board.TX, board.RX, baudrate=115200, timeout=0)
 
@@ -174,24 +176,30 @@ while True:
             elif glow_mode==5:
                 # random colors
                 random_pixels()
-        if usb:
-            caps_on = False
-            scroll_on = False
+        if USB:
             try:
-                caps_on = usb.led_on(Keyboard.LED_CAPS_LOCK)
+                try:
+                    caps_on = usb.led_on(Keyboard.LED_CAPS_LOCK)
+                except:
+                    usb = Keyboard(usb_hid.devices)
+                    caps_on = usb.led_on(Keyboard.LED_CAPS_LOCK)
                 scroll_on = usb.led_on(Keyboard.LED_SCROLL_LOCK)
-                if SCROLL_LED:
-                    glow_pixel[0] = CYAN if scroll_on else BLACK
-                else:
-                    uart.write(bytearray([SCROLL_LED_ON if scroll_on else SCROLL_LED_OFF]))
                 if CAPS_LED:
                     glow_pixel[0] = YELLOW if caps_on else BLACK
                 else:
                     uart.write(bytearray([CAPS_LED_ON if caps_on else CAPS_LED_OFF]))
-            except:
-                glow_pixel[0] = RED
+                if SCROLL_LED:
+                    glow_pixel[0] = CYAN if scroll_on else BLACK
+                else:
+                    uart.write(bytearray([SCROLL_LED_ON if scroll_on else SCROLL_LED_OFF]))
+            except Exception as x:
+                usb = None
+                pixel[0] = DARK_RED
+                glow_pixel[0] = DARK_RED
+                print('Caught this exception: ' + repr(x))
         glow_pixel.show()
-
+    if pixel[0]==DARK_RED:
+        continue
     k_event = key_matrix.events.get()
     if k_event:
         k = k_event.key_number
@@ -207,9 +215,8 @@ while True:
                     b[0] = KEY_RELEASED
                 uart.write(bytearray(b))
                 pixel[0] = BLUE
-            except Exception as x:
-                print('Caught this exception: ' + repr(x))
-                pixel[0] = RED
+            except:
+                pixel[0] = DARK_RED
             continue
             
     if not k_event:
@@ -244,8 +251,9 @@ while True:
                 k = k_event.key_code
                 break
         except Exception as x:
-            print('Caught this exception: ' + repr(x))
-            pixel[0] = RED
+            pixel[0] = DARK_RED
+            if USB:
+                print('Caught this exception: ' + repr(x))
             continue
 
     if not k_event:
