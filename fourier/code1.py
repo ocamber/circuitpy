@@ -36,6 +36,7 @@ glow_pixel.fill(BLACK)
 glow_pixel[0] = YELLOW
 glow_pixel.show()
 glow_mode = 0
+glow_level = 0
 glow_delta = -1
 glow_interval = .2
 cc = None
@@ -75,6 +76,7 @@ def glow_set():
         for i in range(6):
             glow_pixel[i+1] = DARK_RED
         glow_interval = .01
+        glow_level = 25
         glow_delta = -1
     elif glow_mode == 2:
         # blue
@@ -153,7 +155,7 @@ while True:
         if glow_mode>0 and glow_mode!=2:
             if glow_mode==1:
                 # red breathing
-                v = glow_pixel[1][0] + glow_delta
+                v = glow_level + glow_delta
                 if v<0:
                     v = 0
                     glow_delta = 1
@@ -162,6 +164,7 @@ while True:
                     glow_delta = -1
                     if usb:
                         uart.write(bytearray([GLOW_OFF+glow_mode]))
+                glow_level = v
                 for i in range(6):
                     glow_pixel[i+1] = (v,0,0)
             elif glow_mode==3:
