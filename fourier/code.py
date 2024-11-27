@@ -12,6 +12,8 @@ from adafruit_hid.keycode import Keycode
 import random
 import neopixel
 
+DARK_WHITE = (20,20,20)
+DARK_BLUE = (0,0,20)
 DARK_RED = (25,0,0)
 RED = (50, 0, 0)
 ORANGE = (40, 15, 0)
@@ -90,13 +92,15 @@ def glow_set():
         random_pixels()
         glow_interval = .4
     elif glow_mode == 6:
-        # eyes
+        # shifty eyes
         for i in range(6):
             glow_pixel[i+1] = BLACK
-        i = 2
-        glow_pixel[i] = WHITE
-        glow_pixel[i+1] = PURPLE
-        glow_pixel[i+2] = WHITE
+        i = 1 if CAPS_LED else 4
+        glow_pixel[i]   = DARK_WHITE
+        glow_pixel[i+1] = DARK_BLUE
+        glow_pixel[i+2] = DARK_WHITE
+        glow_interval = 4.8
+        glow_delta = 0
     glow_pixel.show()
 
 # check for USB
@@ -156,7 +160,7 @@ while True:
     tm = time.monotonic()
     if tm > prev_tm + glow_interval:
         prev_tm = tm
-        if glow_mode>0 and glow_mode!=2 and glow_mode!=6:
+        if glow_mode>0 and glow_mode!=2:
             if glow_mode==1:
                 # red breathing
                 v = glow_pixel[1][0] + glow_delta
@@ -182,6 +186,19 @@ while True:
             elif glow_mode==5:
                 # random colors
                 random_pixels()
+            elif glow_mode==6:
+                # shifty eyes
+                glow_delta += 1
+                if glow_delta > 3:
+                    glow_delta = 0
+                    if usb:
+                        uart.write(bytearray([GLOW_OFF+glow_mode]))
+                for i in range(6):
+                    glow_pixel[i+1] = BLACK
+                i =  (1 + glow_delta) if CAPS_LED else (4 - glow_delta)
+                glow_pixel[i]   = DARK_WHITE
+                glow_pixel[i+1] = DARK_BLUE
+                glow_pixel[i+2] = DARK_WHITE
         if usb:
             caps_on = False
             scroll_on = False
