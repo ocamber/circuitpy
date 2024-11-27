@@ -89,6 +89,14 @@ def glow_set():
         # random colors
         random_pixels()
         glow_interval = .4
+    elif glow_mode == 6:
+        # eyes
+        for i in range(6):
+            glow_pixel[i+1] = BLACK
+        i = 2
+        glow_pixel[i] = WHITE
+        glow_pixel[i+1] = PURPLE
+        glow_pixel[i+2] = WHITE
     glow_pixel.show()
 
 # check for USB
@@ -148,7 +156,7 @@ while True:
     tm = time.monotonic()
     if tm > prev_tm + glow_interval:
         prev_tm = tm
-        if glow_mode>0 and glow_mode!=2:
+        if glow_mode>0 and glow_mode!=2 and glow_mode!=6:
             if glow_mode==1:
                 # red breathing
                 v = glow_pixel[1][0] + glow_delta
@@ -221,7 +229,7 @@ while True:
                     break
                 pixel[0] = BLUE
                 b = data[0]
-                if b>=GLOW_OFF and b<=GLOW_OFF+5:
+                if b>=GLOW_OFF and b<=GLOW_OFF+6:
                     glow_mode = b - GLOW_OFF
                     glow_set()
                     break
@@ -257,7 +265,7 @@ while True:
                 glow_mode = 0
             else:
                 glow_mode += 1
-                if glow_mode > 5:
+                if glow_mode > 6:
                     glow_mode = 1
             uart.write(bytearray([GLOW_OFF+glow_mode]))
             glow_set()
