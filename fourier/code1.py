@@ -5,12 +5,13 @@ import keypad
 import busio
 import digitalio
 import usb_hid
+import random
+import neopixel
+import storage
 from adafruit_hid.consumer_control import ConsumerControl
 from adafruit_hid.consumer_control_code import ConsumerControlCode
 from adafruit_hid.keyboard import Keyboard
 from adafruit_hid.keycode import Keycode
-import random
-import neopixel
 
 DARK_WHITE = (20,20,20)
 DARK_BLUE = (0,0,20)
@@ -27,9 +28,9 @@ WHITE = (255, 255, 255)
 BLACK = (0,0,0)
 RAINBOW = (BLACK, RED, ORANGE, YELLOW, GREEN, BLUE, VIOLET)
 
+USB = (storage.getmount("/").label[-1:] == '1')
 CAPS_LED = False
 SCROLL_LED = True
-USB = False
 
 pixel = neopixel.NeoPixel(board.NEOPIXEL, 1, brightness=.5, auto_write=True)
 pixel[0] = CYAN
