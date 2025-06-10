@@ -4,6 +4,7 @@ import array
 import keypad
 import busio
 import digitalio
+import supervisor
 import usb_hid
 import random
 import neopixel
@@ -28,7 +29,6 @@ WHITE = (255, 255, 255)
 BLACK = (0,0,0)
 RAINBOW = (BLACK, RED, ORANGE, YELLOW, GREEN, BLUE, VIOLET)
 
-USB = (storage.getmount("/").label[-1:] == '1')
 CAPS_LED = True
 SCROLL_LED = False
     
@@ -105,6 +105,8 @@ def glow_set():
     glow_pixel.show()
 
 # check for USB
+# USB = supervisor.runtime.usb_connected
+USB = True
 if USB:
     try:
         cc = ConsumerControl(usb_hid.devices)
