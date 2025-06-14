@@ -31,6 +31,7 @@ RAINBOW = (BLACK, RED, ORANGE, YELLOW, GREEN, BLUE, VIOLET)
 
 CAPS_LED = False
 SCROLL_LED = True
+USB = False
 
 pixel = neopixel.NeoPixel(board.NEOPIXEL, 1, brightness=.5, auto_write=True)
 pixel[0] = CYAN
@@ -104,9 +105,6 @@ def glow_set():
         glow_delta = 0
     glow_pixel.show()
 
-# check for USB
-# USB = supervisor.runtime.usb_connected
-USB = False
 if USB:
     try:
         cc = ConsumerControl(usb_hid.devices)
